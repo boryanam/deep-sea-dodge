@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deep Sea Dodge: The Warning Update</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Deep Sea Dodge: Mobile Edition</title>
     <style>
         body {
             margin: 0;
@@ -16,90 +16,88 @@
             color: white;
             font-family: 'Segoe UI', Arial, sans-serif;
             overflow: hidden;
+            touch-action: none; /* Prevents browser zooming/panning */
         }
         #menu {
             position: absolute;
             z-index: 20;
             background: rgba(0, 11, 26, 0.95);
-            padding: 40px;
+            padding: 30px;
             border-radius: 20px;
             text-align: center;
             border: 2px solid #00ccff;
-            box-shadow: 0 0 50px #004e92;
+            width: 80%;
+            max-width: 400px;
         }
         #countdown-overlay {
             position: absolute;
             z-index: 30;
             display: none;
-            font-size: 120px;
+            font-size: 100px;
             font-weight: bold;
             color: #ff3300;
-            text-shadow: 0 0 30px #ff0000;
-            pointer-events: none;
         }
-        .btn-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
         button {
-            padding: 15px 40px;
-            font-size: 20px;
+            padding: 15px;
+            font-size: 18px;
             font-weight: bold;
             cursor: pointer;
             border: none;
             border-radius: 10px;
-            transition: transform 0.1s, background 0.2s;
         }
-        button:active { transform: scale(0.95); }
         .chill { background: #33ff57; color: #000; }
         .standard { background: #00ccff; color: #000; }
         .extreme { background: #ff4d4d; color: #fff; }
 
-        .header-ui { margin-bottom: 10px; font-size: 24px; font-weight: bold; display: none; gap: 50px; }
+        .header-ui { margin-bottom: 5px; font-size: 20px; font-weight: bold; display: none; gap: 30px; }
         #lives-display { color: #ff4d4d; }
-        #level-display { color: #ffd700; }
-        #powerup-ui { color: #ffcc00; font-size: 18px; min-height: 24px; text-transform: uppercase; font-weight: bold;}
+        #powerup-ui { color: #ffcc00; font-size: 14px; min-height: 20px; text-transform: uppercase; }
         
         canvas {
-            border: 6px solid #1a1a1a;
+            border: 4px solid #1a1a1a;
             background: #004e92;
-            box-shadow: 0 0 50px rgba(0,0,0,0.8);
-            border-radius: 12px;
+            border-radius: 8px;
             display: none;
+            max-width: 95vw;
+            max-height: 70vh;
         }
         .footer-ui {
-            margin-top: 15px;
-            font-size: 18px;
+            margin-top: 10px;
+            font-size: 14px;
             color: #a3e4ff;
             background: rgba(0, 40, 80, 0.6);
-            padding: 8px 25px;
-            border-radius: 30px;
+            padding: 10px 20px;
+            border-radius: 20px;
             display: none;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1>DEEP SEA DODGE</h1>
-        <p style="color: #ffcc00;">Goal: Survive 60 Seconds</p>
+        <h2>DEEP SEA DODGE</h2>
+        <p>Survive 60s! <br><small>Slide to Move | Double-Tap to Dash</small></p>
         <div class="btn-group">
             <button class="chill" onclick="initGame(0.7)">CHILL</button>
             <button class="standard" onclick="initGame(1.0)">STANDARD</button>
             <button class="extreme" onclick="initGame(1.6)">EXTREME</button>
         </div>
-        <p style="font-size: 0.9em; margin-top: 20px; color: #888;">[Arrow Keys] or [8/2] to Swim | [Space] Dash</p>
     </div>
 
     <div id="countdown-overlay">3</div>
 
     <div class="header-ui" id="ui-top">
-        <div id="level-display">🌊 LEVEL: <span id="level">1</span></div>
-        <div id="lives-display">❤️ LIVES: <span id="lives">3</span></div>
+        <div>🌊 Lvl: <span id="level">1</span></div>
+        <div id="lives-display">❤️: <span id="lives">3</span></div>
     </div>
     <div id="powerup-ui"></div>
 
     <canvas id="gameCanvas" width="850" height="450"></canvas>
 
     <div class="footer-ui" id="ui-bot">
-        ⏱️ Time: <span id="timer">0.0</span>s / 60s | UP (Arrow/8) DOWN (Arrow/2) | DASH (Space)
+        Time: <span id="timer">0.0</span>s / 60s
     </div>
 
     <script>
@@ -115,7 +113,6 @@
         function playTone(freq, type, start, duration, volume = 0.1) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -135,73 +132,84 @@
         let startTime = 0;
         let invincibilityTimer = 0;
         let dashCooldown = 0;
-        let warningBeepsTriggered = 0; // Track which beeps have fired
+        let warningBeepsTriggered = 0;
         const gameDuration = 60;
 
         const player = { x: 80, y: 225, width: 50, height: 35, speed: 7, color: '#00ccff', dashing: 0 };
         let fishes = [];
+
+        // TOUCH HANDLING
+        let lastTap = 0;
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const now = Date.now();
+            if (now - lastTap < 300) { // Double tap detection
+                if (dashCooldown <= 0 && gameActive) {
+                    player.dashing = 15;
+                    dashCooldown = 120;
+                    playTone(600, 'sine', 0, 0.1, 0.2);
+                }
+            }
+            lastTap = now;
+        }, {passive: false});
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const scaleY = canvas.height / rect.height;
+            const touchY = (touch.clientY - rect.top) * scaleY;
+            // Move player toward touch Y
+            player.y = Math.max(0, Math.min(canvas.height - player.height, touchY - player.height / 2));
+        }, {passive: false});
+
+        // KEYBOARD HANDLING (Keep for Desktop)
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.code] = true; keys[e.key] = true;
+            if (e.code === 'Space' && dashCooldown <= 0 && gameActive) {
+                player.dashing = 15; dashCooldown = 120;
+                playTone(600, 'sine', 0, 0.1, 0.2);
+            }
+        });
+        window.addEventListener('keyup', e => { keys[e.code] = false; keys[e.key] = false; });
 
         function initGame(mult) {
             difficultyMultiplier = mult;
             document.getElementById('menu').style.display = 'none';
             countdownEl.style.display = 'block';
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            
             let count = 3;
             countdownEl.innerText = count;
             playTone(440, 'sine', 0, 0.1);
-
             const timer = setInterval(() => {
                 count--;
-                if (count > 0) {
-                    countdownEl.innerText = count;
-                    playTone(440, 'sine', 0, 0.1);
-                } else {
+                if (count > 0) { countdownEl.innerText = count; playTone(440, 'sine', 0, 0.1); }
+                else {
                     clearInterval(timer);
                     countdownEl.style.display = 'none';
-                    document.getElementById('gameCanvas').style.display = 'block';
+                    canvas.style.display = 'block';
                     document.getElementById('ui-top').style.display = 'flex';
                     document.getElementById('ui-bot').style.display = 'block';
-                    gameActive = true;
-                    startTime = Date.now();
+                    gameActive = true; startTime = Date.now();
                     playTone(880, 'sine', 0, 0.3);
                     requestAnimationFrame(loop);
                 }
             }, 1000);
         }
 
-        const keys = {};
-        window.addEventListener('keydown', e => {
-            keys[e.code] = true;
-            keys[e.key] = true;
-            if (e.code === 'Space' && dashCooldown <= 0 && gameActive) {
-                player.dashing = 15;
-                dashCooldown = 120;
-                playTone(600, 'sine', 0, 0.1, 0.2);
-            }
-        });
-        window.addEventListener('keyup', e => {
-            keys[e.code] = false;
-            keys[e.key] = false;
-        });
-
         function createFish() {
             const r = Math.random();
             let type = 'normal';
             if (r < 0.08) type = 'bomb';
             else if (r < 0.12) type = 'golden';
-
             const size = type === 'golden' ? 30 : (type === 'bomb' ? 45 : Math.random() * 30 + 20);
-            let speed = ( (Math.random() * 2 + 2.5) + (currentLevel * 0.7) ) * difficultyMultiplier;
-            
+            let speed = ((Math.random() * 2 + 2.5) + (currentLevel * 0.7)) * difficultyMultiplier;
             fishes.push({
-                x: canvas.width + 60,
-                y: Math.random() * (canvas.height - size),
-                width: size, height: size * 0.7,
-                speed: type === 'golden' ? 4 * difficultyMultiplier : speed,
+                x: canvas.width + 60, y: Math.random() * (canvas.height - size),
+                width: size, height: size * 0.7, speed: type === 'golden' ? 4 * difficultyMultiplier : speed,
                 color: type === 'golden' ? '#FFD700' : (type === 'bomb' ? '#111' : '#FF5733'),
-                type: type, state: type === 'bomb' ? 'priming' : 'swimming', 
-                timer: 0, phase: Math.random() * Math.PI * 2
+                type: type, state: type === 'bomb' ? 'priming' : 'swimming', timer: 0, phase: Math.random() * Math.PI * 2
             });
         }
 
@@ -211,40 +219,25 @@
             ctx.save();
             ctx.translate(f.x + f.width / 2, f.y + f.height / 2);
             if (!isPlayer) ctx.scale(-1, 1);
-
             if (f.type === 'bomb' && f.state === 'priming') {
                 let pulse = (Math.sin(time * 25) + 1) / 2;
                 ctx.shadowBlur = 20 + pulse * 30; ctx.shadowColor = "red";
                 ctx.fillStyle = `rgb(${100 + pulse * 155}, 0, 0)`;
             } else if (f.type === 'golden' || (isPlayer && invincibilityTimer > 0)) {
-                // Flickering effect in the last 3 seconds
-                if (isPlayer && invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0) {
-                    ctx.shadowBlur = 0;
-                    ctx.fillStyle = f.color;
-                } else {
-                    ctx.shadowBlur = 15; ctx.shadowColor = "yellow"; ctx.fillStyle = f.color;
-                }
+                if (isPlayer && invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0) { ctx.shadowBlur = 0; }
+                else { ctx.shadowBlur = 15; ctx.shadowColor = "yellow"; }
+                ctx.fillStyle = f.color;
             } else { ctx.fillStyle = f.color; }
-
             ctx.beginPath();
             ctx.moveTo(-f.width / 2, 0); ctx.lineTo(-f.width / 2 - 15, -10 + wave); ctx.lineTo(-f.width / 2 - 15, 10 + wave); ctx.fill();
             ctx.beginPath(); ctx.ellipse(0, 0, f.width/2, f.height/2, 0, 0, Math.PI * 2); ctx.fill();
-            
-            if (isPlayer && dashCooldown > 0) {
-                ctx.fillStyle = "white"; ctx.fillRect(-f.width/2, f.height/2 + 8, f.width * (dashCooldown/120), 4);
-            }
-            
+            if (isPlayer && dashCooldown > 0) { ctx.fillStyle = "white"; ctx.fillRect(-f.width/2, f.height/2 + 8, f.width * (dashCooldown/120), 4); }
             ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(f.width/4, -f.height/6, 4, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(f.width/4 + 1, -f.height/6, 2, 0, Math.PI * 2); ctx.fill();
-            
-            if (isPlayer && invincibilityTimer > 0) {
-                // Flicker shield visual
-                if (!(invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0)) {
-                    ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, f.width, 0, Math.PI*2); ctx.stroke();
-                }
+            if (isPlayer && invincibilityTimer > 0 && !(invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0)) {
+                ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, f.width, 0, Math.PI*2); ctx.stroke();
             }
             ctx.restore();
-
             if (f.state === 'exploding') {
                 ctx.beginPath(); ctx.arc(f.x + f.width/2, f.y + f.height/2, f.timer * 90, 0, Math.PI*2);
                 ctx.fillStyle = `rgba(255, 50, 0, ${1 - f.timer/1.5})`; ctx.fill();
@@ -254,74 +247,42 @@
         function update() {
             let elapsed = (Date.now() - startTime) / 1000;
             timerEl.innerText = elapsed.toFixed(1);
-            
             if (invincibilityTimer > 0) {
                 invincibilityTimer -= 1/60;
-                powerupEl.innerText = "⭐ GOLDEN SHIELD: " + invincibilityTimer.toFixed(1) + "s";
-                
-                // --- WARNING BEEPS LOGIC ---
-                if (invincibilityTimer <= 3.0 && warningBeepsTriggered === 0) {
-                    playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 1;
-                } else if (invincibilityTimer <= 2.0 && warningBeepsTriggered === 1) {
-                    playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 2;
-                } else if (invincibilityTimer <= 1.0 && warningBeepsTriggered === 2) {
-                    playTone(1100, 'sine', 0, 0.15); warningBeepsTriggered = 3;
-                }
-            } else {
-                powerupEl.innerText = "";
-                warningBeepsTriggered = 0; // Reset for next powerup
-            }
-
+                powerupEl.innerText = "SHIELD: " + invincibilityTimer.toFixed(1) + "s";
+                if (invincibilityTimer <= 3.0 && warningBeepsTriggered === 0) { playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 1; }
+                else if (invincibilityTimer <= 2.0 && warningBeepsTriggered === 1) { playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 2; }
+                else if (invincibilityTimer <= 1.0 && warningBeepsTriggered === 2) { playTone(1100, 'sine', 0, 0.15); warningBeepsTriggered = 3; }
+            } else { powerupEl.innerText = ""; warningBeepsTriggered = 0; }
             if (dashCooldown > 0) dashCooldown--;
-
             let newLevel = Math.min(3, Math.floor(elapsed / 20) + 1);
-            if (newLevel !== currentLevel) {
-                currentLevel = newLevel; levelEl.innerText = currentLevel; playTone(880, 'sine', 0, 0.1);
-            }
-
-            if (elapsed >= gameDuration) {
-                gameActive = false; playTone(523, 'square', 0, 0.4);
-                setTimeout(() => { alert("LEGENDARY VICTORY!"); location.reload(); }, 200); return;
-            }
-
-            let currentSpeed = player.speed;
-            if (player.dashing > 0) { currentSpeed *= 3; player.dashing--; }
-            if ((keys['ArrowUp'] || keys['8']) && player.y > 0) player.y -= currentSpeed;
-            if ((keys['ArrowDown'] || keys['2']) && player.y < canvas.height - player.height) player.y += currentSpeed;
+            if (newLevel !== currentLevel) { currentLevel = newLevel; levelEl.innerText = currentLevel; playTone(880, 'sine', 0, 0.1); }
+            if (elapsed >= gameDuration) { gameActive = false; playTone(523, 'square', 0, 0.4); setTimeout(() => { alert("VICTORY!"); location.reload(); }, 200); return; }
+            
+            // Speed logic for keyboard
+            let curSpd = player.speed; if (player.dashing > 0) { curSpd *= 3; player.dashing--; }
+            if ((keys['ArrowUp'] || keys['8']) && player.y > 0) player.y -= curSpd;
+            if ((keys['ArrowDown'] || keys['2']) && player.y < canvas.height - player.height) player.y += curSpd;
 
             if (Math.random() < 0.02 + (currentLevel * 0.02)) createFish();
-
             for (let i = fishes.length - 1; i >= 0; i--) {
                 let f = fishes[i];
-                if (f.state === 'priming') {
-                    f.x -= f.speed; f.timer += 1/60;
-                    if (f.timer >= 3) { f.state = 'exploding'; f.timer = 0; playTone(40, 'sawtooth', 0, 0.6, 0.5); }
-                } else if (f.state === 'swimming') { f.x -= f.speed;
-                } else if (f.state === 'exploding') {
+                if (f.state === 'priming') { f.x -= f.speed; f.timer += 1/60; if (f.timer >= 3) { f.state = 'exploding'; f.timer = 0; playTone(40, 'sawtooth', 0, 0.6, 0.5); }}
+                else if (f.state === 'swimming') { f.x -= f.speed; }
+                else if (f.state === 'exploding') {
                     f.timer += 1/30;
-                    let dx = (player.x + player.width/2) - (f.x + f.width/2);
-                    let dy = (player.y + player.height/2) - (f.y + f.height/2);
-                    if (Math.sqrt(dx*dx + dy*dy) < 150 && invincibilityTimer <= 0) {
-                        lives = 0; livesEl.innerText = 0; gameActive = false;
-                        setTimeout(() => { alert("INSTANT KO BY BOMB!"); location.reload(); }, 100);
-                    }
+                    let dx = (player.x + player.width/2) - (f.x + f.width/2), dy = (player.y + player.height/2) - (f.y + f.height/2);
+                    if (Math.sqrt(dx*dx + dy*dy) < 150 && invincibilityTimer <= 0) { lives = 0; gameActive = false; setTimeout(() => { alert("KO BY BOMB!"); location.reload(); }, 100); }
                     if (f.timer > 1.5) fishes.splice(i, 1);
                 }
-                
-                let dx = (player.x + player.width/2) - (f.x + f.width/2);
-                let dy = (player.y + player.height/2) - (f.y + f.height/2);
+                let dx = (player.x + player.width/2) - (f.x + f.width/2), dy = (player.y + player.height/2) - (f.y + f.height/2);
                 if (f.state !== 'exploding' && Math.sqrt(dx*dx + dy*dy) < 38) {
-                    if (f.type === 'golden') {
-                        invincibilityTimer = 8; // Increased slightly to enjoy the shield
-                        warningBeepsTriggered = 0;
-                        playTone(1760, 'sine', 0, 0.3); fishes.splice(i, 1);
-                    } else if (invincibilityTimer <= 0) {
+                    if (f.type === 'golden') { invincibilityTimer = 8; warningBeepsTriggered = 0; playTone(1760, 'sine', 0, 0.3); fishes.splice(i, 1); }
+                    else if (invincibilityTimer <= 0) {
                         if (f.type === 'bomb') lives = 0; else lives--;
                         livesEl.innerText = lives;
-                        if (lives <= 0) {
-                            gameActive = false;
-                            setTimeout(() => { alert("GAME OVER!"); location.reload(); }, 100);
-                        } else { playTone(150, 'sawtooth', 0, 0.2); fishes.splice(i, 1); }
+                        if (lives <= 0) { gameActive = false; setTimeout(() => { alert("GAME OVER!"); location.reload(); }, 100); }
+                        else { playTone(150, 'sawtooth', 0, 0.2); fishes.splice(i, 1); }
                     }
                 }
                 if (f.x < -100) fishes.splice(i, 1);
@@ -330,11 +291,9 @@
 
         function loop() {
             if (!gameActive) return;
-            ctx.fillStyle = '#004e92';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#004e92'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             update();
-            fishes.forEach(f => drawFish(f));
-            drawFish(player, true);
+            fishes.forEach(f => drawFish(f)); drawFish(player, true);
             requestAnimationFrame(loop);
         }
     </script>
