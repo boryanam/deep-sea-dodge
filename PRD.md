@@ -28,11 +28,6 @@ The game features a 60-second survival window divided into three intensity level
 * **Level 2 (20–40s):** Increased spawn frequency and speed boost.
 * **Level 3 (40–60s):** "Frenzy Mode" – Maximum hazard density.
 
-### 3. Audio-Visual Warning System
-* **Shield Warning:** 3 seconds before the Golden Shield expires, the player fish flickers and the system emits three sequential warning beeps.
-* **Bomb Primer:** The Bomb Fish pulses bright red and triggers a high-frequency "heartbeat" sound before detonation.
-* **Pre-game Countdown:** A 3-second visual and auditory countdown to ensure player readiness.
-
 ---
 
 ## 🕹️ Controls
@@ -53,31 +48,35 @@ The game features a 60-second survival window divided into three intensity level
 The game utilizes **Circle-to-Circle Collision Detection**. By treating the player and fish as circular bounds rather than squares, the gameplay feels more forgiving and realistic.
 
 
-
 ### Procedural Animation
-Characters are animated using **Time-based Sine Waves**. This moves the tails and fins at a frequency relative to their swimming speed, removing the need for external sprite sheets or GIF files.
+Characters are animated using **Time-based Sine Waves**. This moves the tails and fins at a frequency relative to their swimming speed, removing the need for external sprite sheets.
 
 
+---
 
-### Audio Engine
-Built entirely on the **Web Audio API**. All sound effects (Crashes, Fanfares, Beeps, and Explosions) are generated mathematically as oscillators (Sine, Square, and Sawtooth waves) at runtime.
+## 📝 Detailed Release Notes (v1.0)
+
+### 🚀 Gameplay & Mechanics
+* **Difficulty Engine:** Implemented a base-speed multiplier for three distinct modes: Chill, Standard, and Extreme.
+* **Extended Survival:** Increased total game time to 60 seconds with a tiered level-up system every 20 seconds.
+* **Instant Death Hazards:** Re-tuned the Bomb Fish to trigger an immediate Game Over upon detonation contact, increasing late-game stakes.
+* **Shield Warning System:** Added a 3-second "Countdown Beep" and visual flickering to the Golden Shield to prevent unexpected expiration deaths.
+* **Dash Cooldown:** Introduced a 2-second recharge timer for the Dash ability, visualized by a stamina bar on the player.
+
+### 📱 Mobile & Accessibility
+* **Touch-Drag Engine:** Implemented native touch-event listeners for smooth vertical finger tracking.
+* **Gesture Controls:** Added double-tap detection for mobile dashing.
+* **Dual-Key Support:** Mapped controls to both Arrow Keys and Numeric keys (8/2) for flexible desktop play.
+* **Responsive Canvas:** The game now auto-scales to fit 95% of the mobile viewport width.
+
+### 🎨 Visuals & Sound
+* **Sub-Surface Lighting:** Added a "God Ray" shimmer effect to the background using moving alpha-blended gradients.
+* **Synthetic Soundscapes:** Switched from static assets to the Web Audio API to generate real-time 8-bit style sound effects.
+* **Collision Feedback:** Added screen-shake and specific frequency shifts (Sawtooth waves) when taking damage.
 
 ---
 
 ## 🚀 Installation & Deployment
-
-Since the game is contained in a single file, it requires no installation:
-
 1.  **Local Play:** Open `index.html` in any modern web browser.
 2.  **Hosting:** * **GitHub Pages:** Push to a repository and enable "Pages" in settings.
     * **Netlify:** Drag and drop the folder into Netlify Drop.
-    * **Firebase:** Use `firebase deploy` for Google-backed hosting.
-
----
-
-## 📝 Release Notes (v1.0)
-* Initial release with 60s survival logic.
-* Added mobile touch-drag support and double-tap dash.
-* Implemented "Instant KO" mechanics for Bomb Fish.
-* Added synthesized sound warning system for power-up expiration.
-* Integrated difficulty selector menu.
