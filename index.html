@@ -3,101 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Deep Sea Dodge: Mobile Edition</title>
+    <title>Deep Sea Dodge: Graphics Overhaul</title>
     <style>
         body {
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #000b1a;
-            color: white;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            overflow: hidden;
-            touch-action: none; /* Prevents browser zooming/panning */
+            margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; background-color: #000b1a; color: white; font-family: 'Segoe UI', Arial, sans-serif;
+            overflow: hidden; touch-action: none;
         }
-        #menu {
-            position: absolute;
-            z-index: 20;
-            background: rgba(0, 11, 26, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            border: 2px solid #00ccff;
-            width: 80%;
-            max-width: 400px;
+        #menu, #biome-menu {
+            position: absolute; z-index: 20; background: rgba(0, 11, 26, 0.95); padding: 30px;
+            border-radius: 20px; text-align: center; border: 2px solid #00ccff; width: 85%; max-width: 400px;
+            box-shadow: 0 0 50px #004e92;
         }
-        #countdown-overlay {
-            position: absolute;
-            z-index: 30;
-            display: none;
-            font-size: 100px;
-            font-weight: bold;
-            color: #ff3300;
-        }
+        #biome-menu { display: none; }
         .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
-        button {
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            border: none;
-            border-radius: 10px;
-        }
+        button { padding: 15px; font-size: 18px; font-weight: bold; cursor: pointer; border: none; border-radius: 10px; transition: 0.2s; position: relative; }
+        button:active { transform: scale(0.95); }
+        .best-label { display: block; font-size: 10px; opacity: 0.8; font-weight: normal; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
         .chill { background: #33ff57; color: #000; }
         .standard { background: #00ccff; color: #000; }
         .extreme { background: #ff4d4d; color: #fff; }
+        .coral { background: #ff7f50; color: white; }
+        .midnight { background: #1a1a2e; color: #999; border: 1px solid #444; }
+        .volcanic { background: #8b0000; color: #ffcc00; }
 
-        .header-ui { margin-bottom: 5px; font-size: 20px; font-weight: bold; display: none; gap: 30px; }
-        #lives-display { color: #ff4d4d; }
-        #powerup-ui { color: #ffcc00; font-size: 14px; min-height: 20px; text-transform: uppercase; }
-        
-        canvas {
-            border: 4px solid #1a1a1a;
-            background: #004e92;
-            border-radius: 8px;
-            display: none;
-            max-width: 95vw;
-            max-height: 70vh;
-        }
-        .footer-ui {
-            margin-top: 10px;
-            font-size: 14px;
-            color: #a3e4ff;
-            background: rgba(0, 40, 80, 0.6);
-            padding: 10px 20px;
-            border-radius: 20px;
-            display: none;
-            text-align: center;
-        }
+        canvas { border: 4px solid #1a1a1a; border-radius: 12px; display: none; max-width: 95vw; max-height: 70vh; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        .header-ui { margin-bottom: 5px; font-size: 22px; font-weight: bold; display: none; gap: 40px; }
+        #powerup-ui { color: #ffd700; font-size: 16px; min-height: 24px; font-weight: bold; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <div id="menu">
         <h2>DEEP SEA DODGE</h2>
-        <p>Survive 60s! <br><small>Slide to Move | Double-Tap to Dash</small></p>
         <div class="btn-group">
-            <button class="chill" onclick="initGame(0.7)">CHILL</button>
-            <button class="standard" onclick="initGame(1.0)">STANDARD</button>
-            <button class="extreme" onclick="initGame(1.6)">EXTREME</button>
+            <button class="chill" onclick="setDiff(0.7)">CHILL</button>
+            <button class="standard" onclick="setDiff(1.0)">STANDARD</button>
+            <button class="extreme" onclick="setDiff(1.6)">EXTREME</button>
         </div>
     </div>
 
-    <div id="countdown-overlay">3</div>
+    <div id="biome-menu">
+        <h2>SELECT BIOME</h2>
+        <div class="btn-group">
+            <button class="coral" onclick="initGame('coral')">🪸 CORAL REEF <span class="best-label" id="best-coral">Best: 0.0s</span></button>
+            <button class="midnight" onclick="initGame('midnight')">🌑 MIDNIGHT ZONE <span class="best-label" id="best-midnight">Best: 0.0s</span></button>
+            <button class="volcanic" onclick="initGame('volcanic')">🌋 VOLCANIC VENT <span class="best-label" id="best-volcanic">Best: 0.0s</span></button>
+        </div>
+    </div>
 
     <div class="header-ui" id="ui-top">
         <div>🌊 Lvl: <span id="level">1</span></div>
-        <div id="lives-display">❤️: <span id="lives">3</span></div>
+        <div id="lives-display">❤️ Lives: <span id="lives">3</span></div>
     </div>
     <div id="powerup-ui"></div>
 
     <canvas id="gameCanvas" width="850" height="450"></canvas>
 
-    <div class="footer-ui" id="ui-bot">
-        Time: <span id="timer">0.0</span>s / 60s
+    <div id="ui-bot" style="display:none; margin-top:10px; color:#a3e4ff; font-weight:bold;">
+        ⏱️ Time: <span id="timer">0.0</span>s / 60s
     </div>
 
     <script>
@@ -107,194 +71,234 @@
         const livesEl = document.getElementById('lives');
         const levelEl = document.getElementById('level');
         const powerupEl = document.getElementById('powerup-ui');
-        const countdownEl = document.getElementById('countdown-overlay');
 
-        let audioCtx;
+        let audioCtx, gameActive = false, animationId, difficultyMultiplier = 1.0;
+        let biome = 'coral', lives = 3, currentLevel = 1, startTime = 0, invincibilityTimer = 0;
+        let dashCooldown = 0, fishes = [], envParticles = [];
+        const player = { x: 80, y: 225, width: 50, height: 35, speed: 7, dashing: 0 };
+
         function playTone(freq, type, start, duration, volume = 0.1) {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime + start);
             gain.gain.setValueAtTime(volume, audioCtx.currentTime + start);
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + start + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + start);
-            osc.stop(audioCtx.currentTime + start + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + start); osc.stop(audioCtx.currentTime + start + duration);
         }
 
-        let gameActive = false;
-        let difficultyMultiplier = 1.0;
-        let lives = 3;
-        let currentLevel = 1;
-        let startTime = 0;
-        let invincibilityTimer = 0;
-        let dashCooldown = 0;
-        let warningBeepsTriggered = 0;
-        const gameDuration = 60;
+        function setDiff(mult) {
+            difficultyMultiplier = mult;
+            document.getElementById('menu').style.display = 'none';
+            ['coral', 'midnight', 'volcanic'].forEach(b => {
+                const score = localStorage.getItem('best_' + b) || '0.0';
+                document.getElementById('best-' + b).innerText = `Best: ${score}s`;
+            });
+            document.getElementById('biome-menu').style.display = 'block';
+        }
 
-        const player = { x: 80, y: 225, width: 50, height: 35, speed: 7, color: '#00ccff', dashing: 0 };
-        let fishes = [];
+        function initGame(selectedBiome) {
+            biome = selectedBiome;
+            document.getElementById('biome-menu').style.display = 'none';
+            canvas.style.display = 'block';
+            document.getElementById('ui-top').style.display = 'flex';
+            document.getElementById('ui-bot').style.display = 'block';
+            lives = 3; fishes = []; envParticles = []; currentLevel = 1; 
+            invincibilityTimer = 0; dashCooldown = 0;
+            livesEl.innerText = lives;
+            gameActive = true; startTime = Date.now();
+            
+            // Seed Environment Particles
+            for(let i=0; i<40; i++) envParticles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 3 + 1,
+                speed: Math.random() * 1 + 0.5,
+                opacity: Math.random() * 0.5 + 0.2
+            });
 
-        // TOUCH HANDLING
-        let lastTap = 0;
-        canvas.addEventListener('touchstart', e => {
-            e.preventDefault();
-            const now = Date.now();
-            if (now - lastTap < 300) { // Double tap detection
-                if (dashCooldown <= 0 && gameActive) {
-                    player.dashing = 15;
-                    dashCooldown = 120;
-                    playTone(600, 'sine', 0, 0.1, 0.2);
-                }
-            }
-            lastTap = now;
-        }, {passive: false});
+            loop();
+        }
 
-        canvas.addEventListener('touchmove', e => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const rect = canvas.getBoundingClientRect();
-            const scaleY = canvas.height / rect.height;
-            const touchY = (touch.clientY - rect.top) * scaleY;
-            // Move player toward touch Y
-            player.y = Math.max(0, Math.min(canvas.height - player.height, touchY - player.height / 2));
-        }, {passive: false});
+        function resetToMenu(message, finalTime, win = false) {
+            gameActive = false; cancelAnimationFrame(animationId);
+            const prevBest = parseFloat(localStorage.getItem('best_' + biome) || 0);
+            if (finalTime > prevBest) localStorage.setItem('best_' + biome, finalTime.toFixed(1));
+            playTone(win ? 523 : 150, 'square', 0, 0.5);
+            setTimeout(() => {
+                alert(message);
+                canvas.style.display = 'none';
+                document.getElementById('ui-top').style.display = 'none';
+                document.getElementById('ui-bot').style.display = 'none';
+                document.getElementById('menu').style.display = 'block';
+            }, 100);
+        }
 
-        // KEYBOARD HANDLING (Keep for Desktop)
         const keys = {};
         window.addEventListener('keydown', e => {
-            keys[e.code] = true; keys[e.key] = true;
+            keys[e.key] = true;
             if (e.code === 'Space' && dashCooldown <= 0 && gameActive) {
                 player.dashing = 15; dashCooldown = 120;
                 playTone(600, 'sine', 0, 0.1, 0.2);
             }
         });
-        window.addEventListener('keyup', e => { keys[e.code] = false; keys[e.key] = false; });
+        window.addEventListener('keyup', e => keys[e.key] = false);
 
-        function initGame(mult) {
-            difficultyMultiplier = mult;
-            document.getElementById('menu').style.display = 'none';
-            countdownEl.style.display = 'block';
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            let count = 3;
-            countdownEl.innerText = count;
-            playTone(440, 'sine', 0, 0.1);
-            const timer = setInterval(() => {
-                count--;
-                if (count > 0) { countdownEl.innerText = count; playTone(440, 'sine', 0, 0.1); }
-                else {
-                    clearInterval(timer);
-                    countdownEl.style.display = 'none';
-                    canvas.style.display = 'block';
-                    document.getElementById('ui-top').style.display = 'flex';
-                    document.getElementById('ui-bot').style.display = 'block';
-                    gameActive = true; startTime = Date.now();
-                    playTone(880, 'sine', 0, 0.3);
-                    requestAnimationFrame(loop);
-                }
-            }, 1000);
-        }
+        canvas.addEventListener('touchmove', e => {
+            if(!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
+            let touchY = (e.touches[0].clientY - rect.top) * (canvas.height / rect.height) - 17;
+            player.y = Math.max(0, Math.min(canvas.height - player.height, touchY));
+        }, {passive: false});
 
         function createFish() {
             const r = Math.random();
-            let type = 'normal';
-            if (r < 0.08) type = 'bomb';
-            else if (r < 0.12) type = 'golden';
+            let type = (r < 0.08) ? 'bomb' : (r < 0.13) ? 'golden' : 'normal';
             const size = type === 'golden' ? 30 : (type === 'bomb' ? 45 : Math.random() * 30 + 20);
-            let speed = ((Math.random() * 2 + 2.5) + (currentLevel * 0.7)) * difficultyMultiplier;
             fishes.push({
                 x: canvas.width + 60, y: Math.random() * (canvas.height - size),
-                width: size, height: size * 0.7, speed: type === 'golden' ? 4 * difficultyMultiplier : speed,
+                width: size, height: size * 0.7, 
+                speed: ((Math.random() * 2 + 2.5) + (Math.floor(((Date.now()-startTime)/1000)/20) * 0.7)) * difficultyMultiplier,
                 color: type === 'golden' ? '#FFD700' : (type === 'bomb' ? '#111' : '#FF5733'),
-                type: type, state: type === 'bomb' ? 'priming' : 'swimming', timer: 0, phase: Math.random() * Math.PI * 2
+                type, state: type === 'bomb' ? 'priming' : 'swimming', timer: 0, phase: Math.random() * 6
             });
         }
 
-        function drawFish(f, isPlayer = false) {
+        function drawEntity(f, isPlayer = false) {
             const time = Date.now() / 1000;
-            const wave = Math.sin(time * 12 + (f.phase || 0)) * 12;
+            const wave = Math.sin(time * 12 + (f.phase || 0)) * 10;
             ctx.save();
             ctx.translate(f.x + f.width / 2, f.y + f.height / 2);
             if (!isPlayer) ctx.scale(-1, 1);
+            
             if (f.type === 'bomb' && f.state === 'priming') {
-                let pulse = (Math.sin(time * 25) + 1) / 2;
-                ctx.shadowBlur = 20 + pulse * 30; ctx.shadowColor = "red";
-                ctx.fillStyle = `rgb(${100 + pulse * 155}, 0, 0)`;
+                let p = (Math.sin(time * 25) + 1) / 2;
+                ctx.shadowBlur = 15 + p * 20; ctx.shadowColor = "red";
+                ctx.fillStyle = `rgb(${100 + p * 155}, 0, 0)`;
             } else if (f.type === 'golden' || (isPlayer && invincibilityTimer > 0)) {
-                if (isPlayer && invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0) { ctx.shadowBlur = 0; }
-                else { ctx.shadowBlur = 15; ctx.shadowColor = "yellow"; }
-                ctx.fillStyle = f.color;
-            } else { ctx.fillStyle = f.color; }
+                ctx.shadowBlur = 15; ctx.shadowColor = "yellow";
+                ctx.fillStyle = isPlayer ? '#00ccff' : '#FFD700';
+            } else { 
+                ctx.fillStyle = isPlayer ? '#00ccff' : f.color; 
+            }
+
             ctx.beginPath();
-            ctx.moveTo(-f.width / 2, 0); ctx.lineTo(-f.width / 2 - 15, -10 + wave); ctx.lineTo(-f.width / 2 - 15, 10 + wave); ctx.fill();
+            ctx.moveTo(-f.width/2, 0); ctx.lineTo(-f.width/2-15, -10+wave); ctx.lineTo(-f.width/2-15, 10+wave); ctx.fill();
             ctx.beginPath(); ctx.ellipse(0, 0, f.width/2, f.height/2, 0, 0, Math.PI * 2); ctx.fill();
-            if (isPlayer && dashCooldown > 0) { ctx.fillStyle = "white"; ctx.fillRect(-f.width/2, f.height/2 + 8, f.width * (dashCooldown/120), 4); }
-            ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(f.width/4, -f.height/6, 4, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(f.width/4 + 1, -f.height/6, 2, 0, Math.PI * 2); ctx.fill();
-            if (isPlayer && invincibilityTimer > 0 && !(invincibilityTimer < 3 && Math.floor(time * 10) % 2 === 0)) {
-                ctx.strokeStyle = "white"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(0, 0, f.width, 0, Math.PI*2); ctx.stroke();
+            
+            // SPECIAL MIDNIGHT EYES
+            if (biome === 'midnight' && !isPlayer) {
+                ctx.shadowBlur = 10; ctx.shadowColor = "#00ffff";
+                ctx.fillStyle = "#00ffff";
+                ctx.beginPath(); ctx.arc(f.width/4, -f.height/6, 5, 0, 6.3); ctx.fill();
+            } else {
+                ctx.fillStyle = "white"; ctx.beginPath(); ctx.arc(f.width/4, -f.height/6, 4, 0, 6.3); ctx.fill();
+                ctx.fillStyle = "black"; ctx.beginPath(); ctx.arc(f.width/4+1, -f.height/6, 2, 0, 6.3); ctx.fill();
             }
             ctx.restore();
+            
             if (f.state === 'exploding') {
-                ctx.beginPath(); ctx.arc(f.x + f.width/2, f.y + f.height/2, f.timer * 90, 0, Math.PI*2);
+                ctx.beginPath(); ctx.arc(f.x + f.width/2, f.y + f.height/2, f.timer * 90, 0, 6.3);
                 ctx.fillStyle = `rgba(255, 50, 0, ${1 - f.timer/1.5})`; ctx.fill();
             }
         }
 
-        function update() {
-            let elapsed = (Date.now() - startTime) / 1000;
-            timerEl.innerText = elapsed.toFixed(1);
-            if (invincibilityTimer > 0) {
-                invincibilityTimer -= 1/60;
-                powerupEl.innerText = "SHIELD: " + invincibilityTimer.toFixed(1) + "s";
-                if (invincibilityTimer <= 3.0 && warningBeepsTriggered === 0) { playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 1; }
-                else if (invincibilityTimer <= 2.0 && warningBeepsTriggered === 1) { playTone(900, 'sine', 0, 0.1); warningBeepsTriggered = 2; }
-                else if (invincibilityTimer <= 1.0 && warningBeepsTriggered === 2) { playTone(1100, 'sine', 0, 0.15); warningBeepsTriggered = 3; }
-            } else { powerupEl.innerText = ""; warningBeepsTriggered = 0; }
-            if (dashCooldown > 0) dashCooldown--;
-            let newLevel = Math.min(3, Math.floor(elapsed / 20) + 1);
-            if (newLevel !== currentLevel) { currentLevel = newLevel; levelEl.innerText = currentLevel; playTone(880, 'sine', 0, 0.1); }
-            if (elapsed >= gameDuration) { gameActive = false; playTone(523, 'square', 0, 0.4); setTimeout(() => { alert("VICTORY!"); location.reload(); }, 200); return; }
-            
-            // Speed logic for keyboard
-            let curSpd = player.speed; if (player.dashing > 0) { curSpd *= 3; player.dashing--; }
-            if ((keys['ArrowUp'] || keys['8']) && player.y > 0) player.y -= curSpd;
-            if ((keys['ArrowDown'] || keys['2']) && player.y < canvas.height - player.height) player.y += curSpd;
-
-            if (Math.random() < 0.02 + (currentLevel * 0.02)) createFish();
-            for (let i = fishes.length - 1; i >= 0; i--) {
-                let f = fishes[i];
-                if (f.state === 'priming') { f.x -= f.speed; f.timer += 1/60; if (f.timer >= 3) { f.state = 'exploding'; f.timer = 0; playTone(40, 'sawtooth', 0, 0.6, 0.5); }}
-                else if (f.state === 'swimming') { f.x -= f.speed; }
-                else if (f.state === 'exploding') {
-                    f.timer += 1/30;
-                    let dx = (player.x + player.width/2) - (f.x + f.width/2), dy = (player.y + player.height/2) - (f.y + f.height/2);
-                    if (Math.sqrt(dx*dx + dy*dy) < 150 && invincibilityTimer <= 0) { lives = 0; gameActive = false; setTimeout(() => { alert("KO BY BOMB!"); location.reload(); }, 100); }
-                    if (f.timer > 1.5) fishes.splice(i, 1);
+        function drawEnvironment(time) {
+            if (biome === 'coral') {
+                ctx.fillStyle = '#004e92'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // God Rays
+                ctx.fillStyle = "rgba(255,255,255,0.04)";
+                for(let i=0; i<3; i++) {
+                    let x = (Math.sin(time/2 + i)*150) + (i*300);
+                    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x+120, 0); ctx.lineTo(x-80, canvas.height); ctx.fill();
                 }
-                let dx = (player.x + player.width/2) - (f.x + f.width/2), dy = (player.y + player.height/2) - (f.y + f.height/2);
-                if (f.state !== 'exploding' && Math.sqrt(dx*dx + dy*dy) < 38) {
-                    if (f.type === 'golden') { invincibilityTimer = 8; warningBeepsTriggered = 0; playTone(1760, 'sine', 0, 0.3); fishes.splice(i, 1); }
-                    else if (invincibilityTimer <= 0) {
-                        if (f.type === 'bomb') lives = 0; else lives--;
-                        livesEl.innerText = lives;
-                        if (lives <= 0) { gameActive = false; setTimeout(() => { alert("GAME OVER!"); location.reload(); }, 100); }
-                        else { playTone(150, 'sawtooth', 0, 0.2); fishes.splice(i, 1); }
-                    }
-                }
-                if (f.x < -100) fishes.splice(i, 1);
+                // Sand
+                ctx.fillStyle = '#c2b280'; ctx.fillRect(0, canvas.height - 25, canvas.width, 25);
+                // Bubbles
+                ctx.fillStyle = "rgba(255,255,255,0.3)";
+                envParticles.forEach(p => {
+                    p.y -= p.speed; if(p.y < -10) p.y = canvas.height + 10;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, 6.3); ctx.fill();
+                });
+            } else if (biome === 'midnight') {
+                ctx.fillStyle = '#0a1a3a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Marine Snow
+                ctx.fillStyle = "rgba(255,255,255,0.2)";
+                envParticles.forEach(p => {
+                    p.y += p.speed * 0.5; p.x += Math.sin(time + p.y) * 0.2;
+                    if(p.y > canvas.height) p.y = -10;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * 0.5, 0, 6.3); ctx.fill();
+                });
+            } else if (biome === 'volcanic') {
+                ctx.fillStyle = '#1a0000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Pulse Magma
+                let pulse = (Math.sin(time) + 1) * 10;
+                ctx.fillStyle = `rgba(150, 0, 0, 0.15)`;
+                ctx.fillRect(0, canvas.height - 40 - pulse, canvas.width, 40 + pulse);
+                // Embers
+                envParticles.forEach(p => {
+                    p.y -= p.speed * 1.5; p.x += Math.sin(time + p.y);
+                    if(p.y < -10) p.y = canvas.height + 10;
+                    ctx.fillStyle = `rgba(255, ${100 + p.opacity*155}, 0, ${p.opacity})`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, 6.3); ctx.fill();
+                });
             }
         }
 
         function loop() {
             if (!gameActive) return;
-            ctx.fillStyle = '#004e92'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            update();
-            fishes.forEach(f => drawFish(f)); drawFish(player, true);
-            requestAnimationFrame(loop);
+            const time = Date.now() / 1000;
+            drawEnvironment(time);
+
+            let elapsed = (time - startTime / 1000);
+            timerEl.innerText = elapsed.toFixed(1);
+            if (elapsed >= 60) { resetToMenu("VICTORY!", elapsed, true); return; }
+
+            if (invincibilityTimer > 0) invincibilityTimer -= 1/60;
+            if (dashCooldown > 0) dashCooldown--;
+
+            let curSpd = player.speed; if (player.dashing > 0) { curSpd *= 3; player.dashing--; }
+            if (keys['8'] || keys['ArrowUp']) { player.y -= curSpd; if (player.y < 0) player.y = 0; }
+            if (keys['2'] || keys['ArrowDown']) { player.y += curSpd; if (player.y > canvas.height - player.height) player.y = canvas.height - player.height; }
+
+            if (Math.random() < 0.02 + (Math.floor(elapsed/20)*0.02)) createFish();
+
+            for (let i = fishes.length - 1; i >= 0; i--) {
+                let f = fishes[i];
+                if (f.state === 'priming') {
+                    f.x -= f.speed; f.timer += 1/60;
+                    if (f.timer >= 3) { f.state = 'exploding'; f.timer = 0; playTone(40, 'sawtooth', 0, 0.5); }
+                } else if (f.state === 'swimming') { f.x -= f.speed; }
+                else if (f.state === 'exploding') {
+                    f.timer += 1/30;
+                    let dx = (player.x+25)-(f.x+f.width/2), dy = (player.y+17)-(f.y+f.height/2);
+                    if (Math.sqrt(dx*dx + dy*dy) < 140 && invincibilityTimer <= 0) { resetToMenu("KO!", elapsed); return; }
+                    if (f.timer > 1.5) fishes.splice(i, 1);
+                }
+                let dx = (player.x+25)-(f.x+f.width/2), dy = (player.y+17)-(f.y+f.height/2);
+                if (f.state !== 'exploding' && Math.sqrt(dx*dx + dy*dy) < 38) {
+                    if (f.type === 'golden') { invincibilityTimer = 8; fishes.splice(i, 1); }
+                    else if (invincibilityTimer <= 0) {
+                        if (f.type === 'bomb') { resetToMenu("KO!", elapsed); return; }
+                        lives--; livesEl.innerText = lives;
+                        if (lives <= 0) { resetToMenu("GAME OVER!", elapsed); return; }
+                        else { playTone(150, 'sawtooth', 0, 0.2); fishes.splice(i, 1); }
+                    }
+                }
+                if (f.x < -100) fishes.splice(i, 1);
+                drawEntity(f);
+            }
+            drawEntity(player, true);
+
+            if (biome === 'midnight' && invincibilityTimer <= 0) {
+                ctx.save(); ctx.globalCompositeOperation = 'destination-in';
+                let grad = ctx.createRadialGradient(player.x+25, player.y+17, 0, player.x+25, player.y+17, 320);
+                grad.addColorStop(0, 'rgba(0,0,0,1)'); grad.addColorStop(1, 'rgba(0,0,0,0.6)');
+                ctx.fillStyle = grad; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.restore();
+            }
+            animationId = requestAnimationFrame(loop);
         }
     </script>
 </body>
