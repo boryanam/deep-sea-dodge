@@ -74,6 +74,31 @@ Characters are animated using **Time-based Sine Waves**. This moves the tails an
 * **Synthetic Soundscapes:** Switched from static assets to the Web Audio API to generate real-time 8-bit style sound effects.
 * **Collision Feedback:** Added screen-shake and specific frequency shifts (Sawtooth waves) when taking damage.
 
+## 📝 Release Notes - Version v1.2 (Environment & Systems Update)
+
+This release focuses on replayability and atmospheric depth, introducing the Biome Selection system and local persistent data.
+
+### 🚀 New Features
+* **Biome Selection Menu:** Players now choose between three distinct environments, each with unique lighting, background particles, and specialized hazards.
+* **Persistent High Scores:** Implemented `localStorage` integration to track and save the "Best Time" for each individual biome. These records persist even after closing the browser.
+* **Dynamic Background Decor:**
+    * **Coral Reef:** Rising oxygen bubbles and a parallax sandy floor.
+    * **Midnight Zone:** Drifting "Marine Snow" particles and bioluminescent cues.
+    * **Volcanic Vent:** Rising embers and a pulsing magma floor effect.
+
+### 🎨 Visual & Visibility Fixes
+* **Midnight Visibility Overhaul:** Based on player feedback, the Midnight Zone visibility was increased by 60%. Added a global ambient navy-blue tint and a massive radial light source to prevent "unfair" deaths.
+* **Bioluminescent Eyes:** All fish in the Midnight Zone now feature glowing neon-cyan eyes, making them visible as silhouettes even before entering the player's primary light radius.
+
+* **Boundary Clamping:** Fixed a critical exploit where the player could swim off-screen to avoid hazards. The player fish is now strictly physically constrained to the canvas dimensions.
+
+### 🛠️ Technical Refinements
+* **Stable Reset Logic:** Replaced `location.reload()` with a manual state-reset function. The game now returns to the menu instantly without a browser refresh, preventing race conditions and UI flickering.
+* **Parallax Particle Engine:** Created a background particle array that simulates 3D depth by moving environment debris at different speeds relative to the player.
+
+
+### 🔊 Audio Updates
+* **Clean Audio Context:** Fixed a bug where audio would not play on mobile devices until the user interacted with the difficulty menu.
 ---
 
 ## 🚀 Installation & Deployment
